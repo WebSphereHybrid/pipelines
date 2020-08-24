@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-push-promote-pl
+spec:
+  params:
+    - name: git-project
+      type: string
+    - name: docker-imagename
+      type: string
+    - name: docker-imagetag
+      type: string
+    - name: event-type
+      type: string
+      description: "The event type"
+    - name: event-ref
+      type: string
+      description: "The event ref"
+  resources:
+    - name: git-source
+      type: git
+    - name: docker-image
+      type: image
+  tasks:
+    - name: build-push-promote-task
+      taskRef:
+        name: build-push-promote-task
+      params:
+        - name: git-project
+          value: "$(params.git-project)"
+        - name: docker-imagename
+          value: "$(params.docker-imagename)"
+        - name: docker-imagetag
+          value: "$(params.docker-imagetag)"
+        - name: event-type
+          value: "$(params.event-type)"
+        - name: event-ref
+          value: "$(params.event-ref)"
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+        outputs:
+        - name: docker-image
+          resource: docker-image
+    - name: image-scan-task
+      conditions:
+      - conditionRef: image-scan-condition
+        params:
+        - name: event-type
+          value: $(params.event-type)
+        - name: event-ref
+          value: $(params.event-ref)
+      taskRef:
+        name: image-scan-task
+      runAfter: [build-push-promote-task]
+      resources:
+        inputs:
+        - name: git-source
+          resource: git-source
+        - name: docker-image
+          resource: docker-image

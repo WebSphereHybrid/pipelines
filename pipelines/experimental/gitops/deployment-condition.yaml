@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Condition
+metadata:
+  name: deployment-condition
+spec:
+  params:
+  - name: "event-type"
+    type: string
+    description: "The Git event type"
+  - name: "event-ref"
+    type: string
+    description: "The Git event ref"
+  check:
+    name: deployment-condition
+    image: kabanero/kabanero-utils:latest
+    command: ["/bin/sh"]
+    args:
+      - -ce
+      - |
+        echo "Checking if deploy-gitops-task should execute..."
+        echo "Event-type = $(params.event-type)"
+        echo "Event-ref = $(params.event-ref)"
+        if [[ $(params.event-type) == "push" && $(params.event-ref) == "refs/heads/master" ]]; then
+          echo "[INFO] Event type is a push to master.  Executing deploy-gitops-task."
+          exit 0
+        else
+          echo "[INFO] Event type is not a push to master. Skipping deploy-gitops-task execution"
+          exit 1
+        fi

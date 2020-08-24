@@ -1,0 +1,23 @@
+#Kabanero! on activate substitute Digest for text '@Digest@'
+# This pipeline will retag an image in the image registry and push it back to image registry with the new tag.
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: image-retag-pl-@Digest@
+spec:
+  resources:
+    - name: docker-src-image
+      type: image
+    - name: docker-dest-image
+      type: image
+  tasks:
+    - name: image-retag-task
+      taskRef:
+        name: image-retag-task-@Digest@
+      resources:
+        inputs:
+        - name: docker-src-image
+          resource: docker-src-image
+        outputs:
+        - name: docker-dest-image
+          resource: docker-dest-image
